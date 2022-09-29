@@ -52,9 +52,10 @@ dependencies {
 ```
 </details>
 
+### Examples
 See full examples in [src/test](https://github.com/OfficialDonut/MinimalMinecraftClient/tree/master/src/test/java/us/donut/mmc).
 
-### Keep Alive Packets
+#### Keep Alive Packets
 ```java
 Account account = ...
 Client client = new Client();
