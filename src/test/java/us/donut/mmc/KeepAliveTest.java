@@ -25,7 +25,7 @@ public class KeepAliveTest {
             while (true) {
                 packet = client.receive();
                 switch (packet.getPacketID()) {
-                    case 0x20: // keep alive
+                    case 0x23: // keep alive
                         long id = packet.readLong();
                         logger.info("Received keep alive " + id);
                         OutboundPacket keepAlivePacket = new OutboundPacket(0x12);

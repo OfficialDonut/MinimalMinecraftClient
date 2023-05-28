@@ -22,7 +22,7 @@ import java.util.zip.*;
  */
 public class Client {
 
-    private static final int PROTOCOL_VERSION = 760;
+    private static final int PROTOCOL_VERSION = 762;
     private static final String SESSION_URL = "https://sessionserver.mojang.com/session/minecraft/join";
     private static final String SESSION_REQUEST = "{\"accessToken\":\"%s\",\"selectedProfile\":\"%s\",\"serverId\":\"%s\"}";
 
@@ -164,14 +164,6 @@ public class Client {
         // create and send login start packet
         OutboundPacket loginStartPacket = new OutboundPacket(0);
         loginStartPacket.writeString(account.getUsername());
-        loginStartPacket.writeBoolean(account.hasCertificate());
-        if (account.hasCertificate()) {
-            loginStartPacket.writeLong(account.getCertificate().getExpiration());
-            loginStartPacket.writeVarInt(account.getCertificate().getPublicKey().getEncoded().length);
-            loginStartPacket.write(account.getCertificate().getPublicKey().getEncoded());
-            loginStartPacket.writeVarInt(account.getCertificate().getPublicKeySig().length);
-            loginStartPacket.write(account.getCertificate().getPublicKeySig());
-        }
         loginStartPacket.writeBoolean(account.hasUUID());
         if (account.hasUUID()) {
             loginStartPacket.writeUUID(account.getUUID());
@@ -217,6 +209,7 @@ public class Client {
         Cipher rsa = Cipher.getInstance("RSA");
         rsa.init(Cipher.ENCRYPT_MODE, keyFactory.generatePublic(new X509EncodedKeySpec(pubKey)));
         byte[] encryptedSecret = rsa.doFinal(secret.getEncoded());
+        byte[] encryptedToken = rsa.doFinal(token);
 
         // make session request
         if (account.hasAccessToken() && account.hasUUID()) {
@@ -239,23 +232,8 @@ public class Client {
         OutboundPacket encryptionResponse = new OutboundPacket(1);
         encryptionResponse.writeVarInt(encryptedSecret.length);
         encryptionResponse.write(encryptedSecret);
-        encryptionResponse.writeBoolean(!account.hasCertificate());
-        if (account.hasCertificate()) {
-            byte[] salt = new byte[Long.BYTES];
-            secureRandom.nextBytes(salt);
-            Signature sig = Signature.getInstance("SHA256withRSA");
-            sig.initSign(account.getCertificate().getPrivateKey(), secureRandom);
-            sig.update(token);
-            sig.update(salt);
-            byte[] messageSignature = sig.sign();
-            encryptionResponse.write(salt);
-            encryptionResponse.writeVarInt(messageSignature.length);
-            encryptionResponse.write(messageSignature);
-        } else {
-            byte[] encryptedToken = rsa.doFinal(token);
-            encryptionResponse.writeVarInt(encryptedToken.length);
-            encryptionResponse.write(encryptedToken);
-        }
+        encryptionResponse.writeVarInt(encryptedToken.length);
+        encryptionResponse.write(encryptedToken);
         send(encryptionResponse);
 
         // wrap the socket input/output streams with cipher streams to decrypt/encrypt packets

@@ -1,6 +1,6 @@
 # Minimal Minecraft Client
 
-A minimal client implementation for Minecraft 1.19.2 ([protocol version 760](https://wiki.vg/Protocol)).
+A minimal client implementation for Minecraft 1.19.4 ([protocol version 762](https://wiki.vg/Protocol)).
 
 Features:
 - [x] Authenticated server login
@@ -65,7 +65,7 @@ if (packet.getPacketID() == 2) { // login sucess packet
     while (true) {
         packet = client.receive();
         switch (packet.getPacketID()) {
-            case 0x20: // keep alive
+            case 0x23: // keep alive
                 long id = packet.readLong();
                 OutboundPacket keepAlivePacket = new OutboundPacket(0x12);
                 keepAlivePacket.writeLong(id);
